@@ -1,6 +1,7 @@
-const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+const baseUrl = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '')).replace(/\/$/, '');
 
 async function request(path, { signal, ...options } = {}) {
+  if (!baseUrl) throw new Error('Bản online chưa kết nối máy chủ dữ liệu.');
   const timeout = AbortSignal.timeout(6000);
   const response = await fetch(`${baseUrl}${path}`, { ...options, signal: signal ? AbortSignal.any([signal, timeout]) : timeout, headers: { 'Content-Type': 'application/json', ...options.headers } });
   const data = await response.json();
