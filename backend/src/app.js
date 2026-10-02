@@ -10,6 +10,8 @@ import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 export const app = express();
 app.disable('x-powered-by');
+// Render terminates TLS at its reverse proxy; enable only on that platform.
+if (process.env.RENDER === 'true') app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: env.origin }));
 app.use(rateLimit({ windowMs: 60000, limit: 120, standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Quá nhiều yêu cầu. Vui lòng thử lại sau một phút.' } }));
