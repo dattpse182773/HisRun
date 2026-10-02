@@ -1,0 +1,152 @@
+/* Keep responsive overrides together: phone, tablet and short landscape screens. */
+main, .hero-copy, .journey-layout > *, .map-card, .game-heading > div,
+.leaderboard-row > *, .profile-heading > div { min-width: 0; }
+.header nav a.active { color: #ad652c; }
+button, a, input, select { touch-action: manipulation; }
+.source-link, .profile-heading h1, .leaderboard-row > *, .map-run-progress span {
+  overflow-wrap: anywhere;
+}
+.modal-card { overscroll-behavior: contain; scrollbar-gutter: stable; }
+.answer-button { overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .hero h1 { font-size: clamp(36px, 5.2vw, 48px); }
+  .hero h1 > span { white-space: normal; }
+  .hero-actions { flex-wrap: wrap; }
+  .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .journey-layout { grid-template-columns: minmax(175px, 210px) minmax(0, 1fr); gap: 22px; }
+}
+@media (max-width: 760px) {
+  .app-shell { padding: 0 max(16px, env(safe-area-inset-left)) 0 max(16px, env(safe-area-inset-right)); }
+  .header, .in-game .header { min-height: 0; height: auto; padding: 16px 0 10px; gap: 12px; }
+  .brand { font-size: 27px; }
+  .brand-mark { width: 39px; height: 42px; }
+  .brand small { font-size: 9px; margin-top: 7px; }
+  .header nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; width: 100%; }
+  .header nav a, .header nav .nav-profile {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 8px 4px !important; border: 0;
+    border-radius: 8px; font-size: 14px; white-space: nowrap;
+  }
+  .header nav a.active { color: #254e3e; background: #e5ecd9; }
+  .header nav:after { display: none; }
+  .hero { padding: 28px 0; gap: 24px; }
+  .hero h1 { font-size: clamp(35px, 9.4vw, 52px); letter-spacing: -1.5px; }
+  .hero h1 > span { white-space: normal; }
+  .hero-description, .page-intro p { font-size: 16px; line-height: 1.75; }
+  .hero-actions { gap: 16px; }
+  .hero-art { aspect-ratio: 1.25; }
+  .page-intro { margin-bottom: 24px; }
+  .page-intro h1 { font-size: clamp(30px, 7.8vw, 40px); letter-spacing: -1px; }
+  .eyebrow { line-height: 1.7; flex-wrap: wrap; }
+  .maps-page, .content-page { padding: 28px 0 36px; }
+  .journey-layout { display: block; }
+  .journey-sidebar { position: static; }
+  .school-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .school-options button { min-width: 0; padding: 12px 10px; }
+  .school-options button.selected { padding: 11px 9px; }
+  .school-options span { font-size: 12px; line-height: 1.5; }
+  .passport { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 18px 0; }
+  .passport > strong { grid-column: 2; grid-row: 1 / 3; font-size: 32px; }
+  .passport p { font-size: 13px; }
+  .passport progress { grid-column: 1 / -1; }
+  .route-hint { margin: 12px 0 24px; }
+  .map-card-body { padding: 20px; }
+  .map-title { font-size: 16px; }
+  .map-play { min-height: 50px; }
+  .route-direction { line-height: 1.7; letter-spacing: .8px; }
+  .curriculum-note { margin-top: 28px; }
+  .in-game .game-page { max-width: 100%; padding-top: 10px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .game-heading { align-items: center; gap: 8px; }
+  .in-game .game-heading h1 { font-size: clamp(18px, 4.6vw, 25px); line-height: 1.35; }
+  .back-link { font-size: 13px; min-height: 36px; }
+  .game-heading > .outline-button { flex-shrink: 0; min-height: 44px; padding: 8px 10px; }
+  .in-game .runner-hud { display: grid; grid-template-columns: auto 1fr 1fr 1fr 44px; gap: 8px; padding: 12px 10px; }
+  .runner-hud .level-stat { display: none; }
+  .runner-hud small { font-size: 10px; letter-spacing: 0; }
+  .in-game .runner-hud strong { font-size: 20px; }
+  .runner-hud em { font-size: 12px; }
+  .hearts { font-size: 20px; letter-spacing: 0; }
+  .map-run-progress { display: block; padding: 8px 10px; }
+  .map-run-progress progress { width: 100%; display: block; margin-bottom: 6px; }
+  .map-run-progress span { font-size: 12px; line-height: 1.5; display: block; }
+  .in-game .game-frame { aspect-ratio: auto; border-width: 2px; border-radius: 0 0 12px 12px; }
+  .run-status { font-size: 13px; gap: 8px; }
+  .touch-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 8px 0 12px; }
+  .touch-controls button { min-width: 0; min-height: 66px; flex-direction: column; gap: 2px; padding: 8px 4px; }
+  .touch-controls strong { font-size: 25px; }
+  .touch-controls span { font-size: 13px; }
+  .modal-backdrop { padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+  .modal-card { max-height: calc(100dvh - max(20px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); padding: 22px; border-radius: 18px; }
+  .modal-card h2 { font-size: 27px; line-height: 1.25; }
+  .map-brief { gap: 15px; }
+  .map-brief p { font-size: 14px; }
+  .school-inline span { font-size: 12px; }
+  .setup-fields { flex-wrap: wrap; }
+  .setup-fields input, .setup-fields select { font-size: 16px; min-height: 48px; }
+  .answer-grid { grid-template-columns: 1fr; gap: 10px; }
+  .answer-button { min-height: 58px; font-size: 16px; }
+  .question-text { font-size: 22px; line-height: 1.45; }
+  .landmark-context { font-size: 14px; line-height: 1.6; }
+  .question-footnote, .sample-label { font-size: 13px; }
+  .full-button { min-height: 54px; margin-top: 18px; }
+  .button-row > * { flex: 1 1 140px; white-space: normal; text-align: center; }
+  .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tab-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .tab-row button { padding: 10px 5px; font-size: 14px; min-height: 48px; }
+  .leaderboard-row { grid-template-columns: 42px minmax(0, 1fr) minmax(70px, auto); padding: 16px 12px; gap: 10px; font-size: 14px; }
+  .table-heading { font-size: 10px; letter-spacing: 0; }
+  .profile-heading { gap: 14px; }
+  .profile-heading h1 { font-size: 28px; }
+  .profile-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-stats article { padding: 17px; }
+  .review-card { padding: 18px; }
+  footer { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 560px) {
+  .map-grid { grid-template-columns: minmax(0, 1fr); }
+  .map-complete { top: 12px; }
+  .map-card h2 { font-size: 28px; }
+}
+@media (max-width: 360px) {
+  .app-shell { padding-left: 12px; padding-right: 12px; }
+  .hero-actions > * { width: 100%; justify-content: center; }
+  .in-game .runner-hud { gap: 5px; padding: 10px 7px; }
+  .in-game .runner-hud strong { font-size: 17px; }
+  .hearts { font-size: 17px; }
+  .runner-hud small { font-size: 9px; }
+  .modal-card { padding: 17px; }
+  .school-inline { grid-template-columns: 1fr; }
+  .school-inline button { min-height: 48px; flex-direction: row; align-items: center; gap: 12px; }
+  .school-inline strong { white-space: nowrap; }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .in-game .header { display: none; }
+  .in-game .game-page { max-width: min(100%, calc((100dvh - 150px) * 1.7778)); padding: 4px 0; }
+  .in-game .game-heading { margin: 0 0 5px; }
+  .in-game .game-heading h1 { font-size: 17px; margin: 0; }
+  .in-game .back-link { min-height: 26px; font-size: 12px; }
+  .in-game .runner-hud { padding: 6px 10px; }
+  .in-game .map-run-progress { padding: 4px 8px; }
+  .in-game .map-run-progress progress { display: none; }
+  .in-game .map-run-progress span { font-size: 11px; }
+  .in-game .run-status, .in-game .controls-guide { display: none; }
+  .in-game .touch-controls { position: fixed; inset: auto max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); display: flex; justify-content: space-between; pointer-events: none; margin: 0; }
+  .in-game .touch-controls button { pointer-events: auto; flex: 0 0 56px; min-width: 56px; background: #fffcf1e8; }
+  .in-game .touch-controls button:nth-child(2) { margin-right: auto; }
+  .in-game .touch-controls button:nth-child(3) { margin-left: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .map-card, .primary-button { transition: none; }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .in-game .runner-hud { display: grid; grid-template-columns: auto 1fr 1fr 1fr 44px; gap: 8px; }
+  .in-game .runner-hud .level-stat { display: none; }
+  .in-game .runner-hud small { font-size: 9px; letter-spacing: 0; white-space: nowrap; }
+  .in-game .runner-hud strong { font-size: 19px; }
+  .in-game .hearts { font-size: 20px; letter-spacing: 0; }
+  .in-game .pause-button { width: 44px; height: 44px; }
+  .in-game .touch-controls button { flex-direction: column; justify-content: center; gap: 0; padding: 6px 3px; min-height: 64px; }
+  .in-game .touch-controls span { font-size: 11px; }
+  .in-game .game-frame { aspect-ratio: auto; }
+}

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Keep example environment files
+!.env.example
+
+# Local MongoDB database
+backend/.local/
+.local/
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Windows / IDE
+Thumbs.db
+.DS_Store
+.vscode/

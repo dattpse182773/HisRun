@@ -1,0 +1,7 @@
+{
+  "name": "hisrun-api", "version": "0.1.0", "private": true, "type": "module",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": { "dev": "node --watch src/server.js", "start": "node src/server.js", "seed": "node src/scripts/seedJourney.js", "seed:sample": "node src/scripts/seedQuestions.js", "data:journey": "node src/scripts/buildJourneyData.js", "test": "node --test", "db:dev": "node src/scripts/localMongo.js" },
+  "dependencies": { "cors": "^2.8.5", "dotenv": "^17.2.0", "express": "^5.1.0", "express-rate-limit": "^8.0.0", "helmet": "^8.1.0", "mongoose": "^8.19.0" },
+  "devDependencies": { "mongodb-memory-server": "^10.2.0", "supertest": "^7.1.0" }
+}

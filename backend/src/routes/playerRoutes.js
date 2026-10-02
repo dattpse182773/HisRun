@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import * as controller from '../controllers/playerController.js';
+import { isDatabaseConnected } from '../config/database.js';
+import { HttpError } from '../middleware/errorHandler.js';
+const router = Router();
+router.use((req, res, next) => next(isDatabaseConnected() ? undefined : new HttpError(503, 'MongoDB chưa kết nối.')));
+router.post('/users', controller.create);
+router.get('/users/:id', controller.detail);
+router.post('/game-results', controller.result);
+router.get('/leaderboard/:metric', controller.leaderboard);
+export default router;

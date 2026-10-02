@@ -1,0 +1,15 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../services/api.js';
+import { readStorage, writeStorage } from '../services/storage.js';
+export default function Review() {
+  const [rows, setRows] = useState(() => readStorage('review', [])); const [answers, setAnswers] = useState({});
+  async function answer(row, index) {
+    if (answers[row._id]?.busy || answers[row._id]?.result) return;
+    setAnswers(previous => ({ ...previous, [row._id]: { busy: true, selected: index } }));
+    try { const result = await api.answer(row._id, index); setAnswers(previous => ({ ...previous, [row._id]: { busy: false, selected: index, result } })); }
+    catch { setAnswers(previous => ({ ...previous, [row._id]: { busy: false, error: 'Chưa kết nối được máy chủ. Hãy thử lại sau.' } })); }
+  }
+  function mastered(id) { const next = rows.filter(row => row._id !== id); setRows(next); writeStorage('review', next); }
+  return <section className="content-page"><div className="page-intro"><div className="eyebrow">MỖI LẦN THỬ, MỘT LẦN NHỚ</div><h1>Góc ôn tập<span>.</span></h1><p>Những câu bạn từng trả lời sai. Thử lại để biến điều chưa biết thành kiến thức của mình.</p></div>{rows.length === 0 ? <div className="empty-state"><span>✦</span><h2>Chưa có câu cần ôn lại</h2><p>Những câu trả lời sai trong hành trình sẽ được lưu tại đây.</p><Link className="primary-button" to="/game">Bắt đầu hành trình →</Link></div> : <div className="review-list">{rows.map((row, number) => { const state = answers[row._id]; return <article className="review-card" key={row._id}><div className="question-meta"><span>{row.subject === 'history' ? 'Lịch sử' : 'Địa lý'} · {row.topic}</span><span>{number + 1}/{rows.length}</span></div><h2>{row.question}</h2><p className="muted">Lần trước: {row.selectedAnswer === null || row.selectedAnswer === undefined ? 'Hết thời gian' : row.answers[row.selectedAnswer]}</p><div className="answer-grid">{row.answers.map((option, index) => <button key={index} className={`answer-button ${state?.result?.correctAnswer === index ? 'correct' : ''}`} disabled={state?.busy || !!state?.result} onClick={() => answer(row, index)}><span>{'ABCD'[index]}</span>{option}</button>)}</div>{state?.busy && <p role="status">Đang kiểm tra…</p>}{state?.error && <p role="alert" className="inline-error">{state.error}</p>}{state?.result ? <div className="answer-result"><strong>{state.result.correct ? 'Chính xác! Bạn đã nhớ rồi.' : 'Thử ghi nhớ lời giải này nhé.'}</strong><p>{state.result.explanation}</p>{state.result.correct ? <button className="outline-button" onClick={() => mastered(row._id)}>✓ Đã nhớ — bỏ khỏi danh sách ôn</button> : <button className="outline-button" onClick={() => setAnswers(previous => ({ ...previous, [row._id]: undefined }))}>Thử lại</button>}</div> : row.explanation && <details><summary>Xem lời giải đã nhận ở lượt trước</summary><p>{row.explanation}</p>{Number.isInteger(row.correctAnswer) && <p>Đáp án: {row.answers[row.correctAnswer]}</p>}</details>}</article>; })}</div>}</section>;
+}
