@@ -1,5 +1,8 @@
+import { getProvinceScenery } from '../../../../shared/provinceScenery.js';
+import { EXPLORATION_MAPS } from '../../../../shared/exploration.js';
 import { getMap } from '../../../../shared/journey.js';
 import { drawLandmark } from './LandmarkRenderer.js';
+import { SCENERY, backgroundUrl, projectTrack } from '../scenery.js';
 const COLORS = {
   mountain: [0xc5e2d8, 0x83a57c, 0x628c80, 0xddc592],
   battlefield: [0xd9e2c6, 0x9ab26b, 0x738957, 0xd1b981],
@@ -13,11 +16,42 @@ const COLORS = {
 export default class World {
   constructor(scene) {
     this.scene = scene; this.graphics = scene.add.graphics().setDepth(-2000); this.marks = scene.add.graphics().setDepth(-1500);
-    this.label = scene.add.text(28, 22, '', { fontFamily: 'Arial', fontSize: '24px', color: '#234d41', fontStyle: 'bold' }).setDepth(2100);
+    this.backdrop = scene.add.image(640, 360, '__WHITE').setDisplaySize(1280, 720).setDepth(-1800).setVisible(false);
+    this.loading = new Set();
+    this.details = scene.add.graphics().setDepth(-1400);
+    this.ambient = scene.add.graphics().setDepth(-1600);
+    this.distance = 0;
+    this.label = scene.add.text(28, 125, '', { fontFamily: 'Arial', fontSize: '22px', color: '#fff4d7', backgroundColor: '#203c32dd', padding: { x: 14, y: 10 }, fontStyle: 'bold' }).setDepth(2100);
     this.landmarkLabels = [];
     this.setMap('map-01');
   }
-  setMap(id) { this.map = getMap(id); this.paint(); }
+  setMap(id, provinceId) {
+    this.province = EXPLORATION_MAPS.find(p => p.id === provinceId);
+    this.destination = getProvinceScenery(provinceId);
+    this.distance = 0;
+    this.details.clear(); this.ambient.clear(); this.marks.clear();
+    this.backdrop.setPosition(640, 360).setDisplaySize(1280, 720);
+    this.map = getMap(id); this.horizon = this.destination?.horizon || SCENERY[this.map.theme].horizon; this.paint();
+    const destination = this.destination;
+    const theme = this.map.theme, key = destination && !destination.legacy ? `province-scenery-${provinceId}` : `scenery-${theme}`;
+    this.sceneryKey = key;
+    this.backdrop.setVisible(false);
+    const show = () => {
+      this.loading.delete(key);
+      if (!this.scene.sys.isActive() || this.sceneryKey !== key) return;
+      this.backdrop.setTexture(key).setDisplaySize(1280, 720).setVisible(true);
+      this.moveBackdrop(this.distance);
+      this.landmarkLabels.forEach(label => label.setVisible(false));
+      this.label.setText(this.province ? `MAP ${this.province.number} · ${this.province.name.toUpperCase()}\n${destination.name}` : `MAP ${this.map.number} · ${this.map.name.toUpperCase()}\n${SCENERY[theme].name}`);
+    };
+    if (this.scene.textures.exists(key)) { show(); return; }
+    if (this.loading.has(key)) return;
+    this.loading.add(key);
+    this.scene.load.once(`filecomplete-${destination?.url.endsWith('.svg') ? 'svg' : 'image'}-${key}`, show);
+    if (destination?.url.endsWith('.svg')) this.scene.load.svg(key, destination.url, { width: 1280, height: 720 });
+    else this.scene.load.image(key, destination?.url || backgroundUrl(theme));
+    if (!this.scene.load.isLoading()) this.scene.load.start();
+  }
   paint() {
     this.landmarkLabels.forEach(label => label.destroy()); this.landmarkLabels = [];
     const map = this.map, [sky, ground, mountain, road] = COLORS[map.theme]; this.name = map.name;
@@ -46,8 +80,101 @@ export default class World {
     g.fillStyle(0x786442).fillRect(x - 7 * scale, y, 14 * scale, 116 * scale);
     g.fillStyle(0x487650).fillCircle(x, y - 20 * scale, 39 * scale).fillCircle(x - 28 * scale, y + 9 * scale, 35 * scale).fillCircle(x + 29 * scale, y + 7 * scale, 33 * scale);
   }
+  moveBackdrop(distance) {
+    // Advance toward the vanishing point without a looping zoom/reset.
+    const progress = Math.min(distance / (this.scene.state?.distanceTarget || 700), 1);
+    const zoom = 1 + progress * 0.85;
+    this.backdrop.setDisplaySize(1280 * zoom, 720 * zoom);
+    this.backdrop.setPosition(this.horizon.x + (640 - this.horizon.x) * zoom,
+      this.horizon.y + (360 - this.horizon.y) * zoom);
+  }
   tick(distance) {
-    const g = this.marks; g.clear(); g.lineStyle(3, 0xa77a4e, 0.4);
-    for (let i = 0; i < 12; i++) { const depth = ((i / 12 + distance / 80) % 1) ** 1.6; const y = 320 + depth * 420; const x = 640 + (i % 2 ? -1 : 1) * (20 + depth * 260); g.lineBetween(x, y, x + 12 + depth * 22, y); }
+    this.distance = distance;
+    this.moveBackdrop(distance);
+    this.drawPassingDetails(distance);
+    if (this.destination && !this.destination.legacy) this.drawDestinationMotion(distance);
+    const g = this.marks; g.clear();
+    // Moving ground detail carries speed while landmarks remain stable and readable.
+    for (let i = 0; i < 22; i++) {
+      const depth = ((i / 22 + distance / 105) % 1) ** 1.6;
+      const point = projectTrack((i % 3) * 0.8 + 0.2, depth * 1.3, this.horizon);
+      g.lineStyle(2 + depth * 2, 0x735531, 0.12 + depth * 0.13);
+      g.lineBetween(point.x, point.y, point.x + 8 + depth * 16, point.y + 2 + depth * 6);
+    }
+  }
+  drawDestinationMotion(distance) {
+    const a = this.ambient, env = this.destination.environment;
+    if (['sea','river','wetland','lake'].includes(env)) {
+      for (let i = 0; i < 30; i++) {
+        const side = i % 2 ? 1 : -1, depth = .16 + ((i * .071 + distance * .0015) % .75);
+        const x = 640 + side * (135 + depth * 650), y = 337 + depth * 330;
+        a.lineStyle(1 + depth * 2, 0xe5f3d4, .45).lineBetween(x, y, x + 15 + Math.sin(distance * .16 + i) * 9 + depth * 22, y);
+      }
+      if (!this.destination.illustrated && ['market','bay','islands','coconut','mangrove','cave'].includes(this.destination.design)) {
+        for (let i = 0; i < 3; i++) {
+          const x = i % 2 ? 995 + Math.sin(distance * .012 + i) * 80 : 145 + Math.sin(distance * .014 + i) * 90;
+          const y = 415 + i * 30 + Math.sin(distance * .1 + i) * 3;
+          a.fillStyle(0x74472f).fillTriangle(x - 39, y, x + 45, y, x + 25, y + 14).fillTriangle(x - 39,y,x+25,y+14,x-22,y+14);
+          a.lineStyle(3,0xe3b876).lineBetween(x-39,y,x+45,y);
+          a.fillStyle(0xdcc789).fillRect(x-13,y-19,31,18);
+          if (this.destination.design === 'market') for(let fruit=0;fruit<4;fruit++) a.fillStyle(fruit%2?0xebc351:0x81ae4f).fillCircle(x-25+fruit*12,y-4,5);
+        }
+      }
+    }
+    if (!this.destination.illustrated && this.destination.design === 'waterfall') for(let i=0;i<15;i++) {
+      const x=74+i*21, y=280+((distance*6+i*23)%145);
+      a.lineStyle(3,0xf5fff1,.55).lineBetween(x,y,x-2,y+18);
+    }
+    if (['mountain','pine'].includes(env)) {
+      for(let i=0;i<3;i++) a.fillStyle(0xf5f2d9,.14).fillEllipse((i*460+distance*.5)%1600-160,210+i*30,330,22);
+    }
+  }
+  drawPassingDetails(distance) {
+    const g = this.details; g.clear();
+    // World-space roadside objects grow and pass the camera; recycle only off-screen.
+    for (let i = 0; i < 32; i++) {
+      const travel = ((distance + i * 13) % 208) / 208;
+      const p = 0.025 / (1.025 - travel);
+      const side = i % 2 ? 1 : -1;
+      const x = this.horizon.x + side * (570 + (i % 4) * 115) * p;
+      const y = this.horizon.y + 700 * p;
+      const s = p * 2.4;
+      if (this.destination?.illustrated || (this.destination && !this.destination.legacy && ['sea','river','wetland','lake'].includes(this.destination.environment))) continue;
+      if (y > 820) continue;
+      const sway = Math.sin(distance * 0.11 + i) * 8 * s;
+      if (i % 4 === 0) {
+        g.fillStyle(0x365b28, 0.25).fillEllipse(x, y, 100 * s, 18 * s);
+        g.fillStyle(0x77502b).fillRect(x - 6 * s, y - 115 * s, 12 * s, 115 * s);
+        g.fillStyle(0x285b2c).fillCircle(x + sway, y - 130 * s, 39 * s)
+          .fillCircle(x - 26 * s + sway, y - 103 * s, 29 * s)
+          .fillCircle(x + 28 * s + sway, y - 107 * s, 32 * s);
+        g.fillStyle(0x5b9438).fillCircle(x - 13 * s + sway, y - 143 * s, 22 * s);
+      } else if (i % 4 === 1) {
+        g.fillStyle(0x8b8c70).fillTriangle(x - 18 * s, y, x - 7 * s, y - 20 * s, x + 23 * s, y);
+        g.fillStyle(0xb2b095).fillTriangle(x - 18 * s, y, x - 7 * s, y - 20 * s, x + 2 * s, y - 3 * s);
+      } else {
+        g.lineStyle(Math.max(1, 3 * s), 0x487a2f, 0.85);
+        for (let blade = -1; blade <= 1; blade++) {
+          g.lineBetween(x, y, x + blade * 15 * s + sway, y - (23 - Math.abs(blade) * 7) * s);
+        }
+        if (i % 5 === 0) g.fillStyle(0xf3ce6c).fillCircle(x + sway, y - 24 * s, 4 * s);
+      }
+    }
+    const a = this.ambient; a.clear();
+    // Small drifting leaves and flapping birds vary independently of road marks.
+    for (let i = 0; i < 9; i++) {
+      const x = (i * 163 + distance * (0.65 + i % 3 * 0.2)) % 1400 - 60;
+      const y = 300 + (i * 47 + distance * 1.1) % 410;
+      a.fillStyle(i % 2 ? 0x9cba41 : 0xd1aa47, 0.7);
+      a.fillEllipse(x, y + Math.sin(distance * 0.12 + i) * 15, 7 + Math.sin(distance * 0.2 + i) * 4, 4);
+    }
+    for (let i = 0; i < 3; i++) {
+      const x = (200 + i * 45 + distance * 0.4) % 1100;
+      const y = 100 + i * 18 + Math.sin(distance * 0.025 + i) * 8;
+      const wing = Math.sin(distance * 0.5 + i) * 5;
+      a.lineStyle(2, 0x355956, 0.65).lineBetween(x - 8, y - wing, x, y).lineBetween(x, y, x + 8, y - wing);
+    }
   }
 }
+
+// Province scenery and ambient motion are loaded together.

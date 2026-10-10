@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { questionReady, resolveRunAnswer } from '../../../../shared/runLife.js';
 import Player from '../objects/Player.js';
 import ObstacleManager from '../systems/ObstacleManager.js';
 import World from '../systems/World.js';
@@ -7,15 +8,36 @@ import { getMap } from '../../../../shared/journey.js';
 import { audioManager } from '../systems/AudioManager.js';
 import { POWER_NAMES } from '../objects/TrackObject.js';
 import { EventBus, GAME_EVENTS as E } from '../EventBus.js';
+import { CHARACTERS, REAR_ATLASES, rearFrame, getCharacter } from '../characters.js';
+import { RUN_RIG_ATLAS, rigParts } from '../runRig.js';
+import { collectToken, coinValue, deductPoints, effectiveSpeed, TIMED_POWERS, TOKENS } from '../../../../shared/tokens.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
+  preload() { this.load.image('zodiac-run-rig', RUN_RIG_ATLAS); this.load.image('zodiac-roll', '/assets/characters/zodiac-roll.png'); REAR_ATLASES.forEach((url, index) => this.load.image(`zodiac-rear-${index}`, url)); }
   create() {
+    if (this.textures.exists('zodiac-run-rig')) {
+      const texture = this.textures.get('zodiac-run-rig');
+      CHARACTERS.forEach(character => {
+        const parts = rigParts(character.frame);
+        for (const part of ['body', 'left', 'right']) { const f = parts[part]; texture.add(`${character.id}-${part}`, 0, f.x, f.y, f.width, f.height); }
+      });
+    }
+    REAR_ATLASES.forEach((_, index) => {
+      if (!this.textures.exists(`zodiac-rear-${index}`)) return;
+      const texture = this.textures.get(`zodiac-rear-${index}`), source = texture.getSourceImage();
+      CHARACTERS.forEach(character => { const f = rearFrame(character.frame, source.width, source.height); texture.add(character.id, 0, f.x, f.y, f.width, f.height); });
+    });
+    if (this.textures.exists('zodiac-roll')) {
+      const texture = this.textures.get('zodiac-roll'), source = texture.getSourceImage();
+      CHARACTERS.forEach(character => { const col = character.frame % 8, row = Math.floor(character.frame / 8); texture.add(character.id, 0, Math.round(col * source.width / 8), Math.round(row * source.height / 3), Math.floor(source.width / 8), Math.floor(source.height / 3)); });
+    }
     this.world = new World(this); this.player = new Player(this); this.obstacles = new ObstacleManager(this);
     this.state = { ...newRun(), gameStatus: 'ready' }; this.invincible = 0; this.hudElapsed = 0; this.gateCount = 0;
     this.notice = this.add.text(640, 170, '', { fontFamily: 'Arial', fontSize: '32px', color: '#fff8d7', backgroundColor: '#214d3f', padding: { x: 20, y: 12 } }).setOrigin(0.5).setDepth(3000).setVisible(false);
     this.noticeTime = 0;
     const handlers = [
+      [E.PREVIEW, options => this.preview(options)],
       [E.START, options => this.start(options)],
       [E.INPUT, action => this.inputAction(action)],
       [E.PAUSE, () => this.togglePause()],
@@ -53,18 +75,26 @@ export default class GameScene extends Phaser.Scene {
     EventBus.emit(E.READY); this.publish();
   }
   start(options = {}) {
-    this.tweens.resumeAll(); this.obstacles.reset(); this.player.reset();
-    this.state = options.mapId ? newJourneyRun(options.mapId, options.schoolLevel) : newRun(options.mode, options.grade); this.invincible = 2; this.gateCount = 0; this.hudElapsed = 0;
-    this.world.setMap(options.mapId); this.notify(options.mapId ? `Map ${getMap(options.mapId).number} · ${getMap(options.mapId).name}` : 'Sẵn sàng? Hành trình bắt đầu!');
+    this.challengeActive = false; this.tweens.resumeAll(); this.obstacles.reset(); this.player.reset();
+    this.player.setCharacter(options.characterId);
+    this.state = options.playMode === 'world' ? { ...newRun('world'), distanceTarget: 1000 } : options.playMode === 'ranked' ? newRun('mixed') : newJourneyRun(options.mapId, options.schoolLevel); this.invincible = 2; this.gateCount = 0; this.hudElapsed = 0;
+    this.state.characterId = getCharacter(options.characterId).id;
+    if (options.provinceExam) this.state = { ...this.state, mode: 'explore', distanceTarget: 7000, examIndex: 0, questionAtTime: 0, questionAtDistance: 0 };
+    this.world.setMap(options.mapId, options.provinceId); this.notify(options.provinceId ? this.world.destination.name : options.mapId ? `Map ${getMap(options.mapId).number} · ${getMap(options.mapId).name}` : 'Sẵn sàng? Hành trình bắt đầu!');
     audioManager.music(true); this.publish();
+  }
+  preview(options) {
+    this.tweens.resumeAll(); this.obstacles.reset(); this.player.reset(); this.player.setCharacter(options.characterId);
+    this.state = { ...newJourneyRun(options.mapId, options.schoolLevel), gameStatus: 'ready', characterId: getCharacter(options.characterId).id };
+    this.world.setMap(options.mapId); this.notice.setVisible(false); audioManager.music(false); this.publish();
   }
   inputAction(action) {
     if (action === 'pause') return this.togglePause();
     if (this.state.gameStatus !== 'playing') return;
-    if (action === 'left') this.player.move(-1);
-    if (action === 'right') this.player.move(1);
+    if (action === 'left' && this.player.move(-1)) audioManager.play('left');
+    if (action === 'right' && this.player.move(1)) audioManager.play('right');
     if (action === 'jump' && this.player.jump()) audioManager.play('jump');
-    if (action === 'slide') this.player.slide();
+    if (action === 'slide' && this.player.slide()) audioManager.play('roll');
   }
   togglePause() {
     if (!['playing', 'paused'].includes(this.state.gameStatus)) return;
@@ -80,6 +110,10 @@ export default class GameScene extends Phaser.Scene {
     }
   }
   collide(item) {
+    if (item.kind === 'question') {
+      if (Math.abs(this.player.x - LANES[item.lane]) < (this.player.collisionBody.width + 145) / 2) { item.setActive(false).setVisible(false); this.openExploreQuestion(); }
+      return;
+    }
     if (item.kind === 'gate') {
       item.setActive(false).setVisible(false); this.state.gameStatus = 'question'; this.tweens.pauseAll(); audioManager.music(false); audioManager.play('gate');
       const mode = this.state.mode;
@@ -88,40 +122,57 @@ export default class GameScene extends Phaser.Scene {
         this.publish(); EventBus.emit(E.QUESTION, { runId: this.state.runId, mapId: this.state.mapId, schoolLevel: this.state.schoolLevel, curriculum: 'pre-2018', landmarkId: item.checkpoint.landmarkId, landmarkName: item.checkpoint.name, subject: item.checkpoint.subject, timed: false });
         return;
       }
-      const subject = ['history', 'geography'].includes(mode) ? mode : this.gateCount++ % 2 === 0 ? 'history' : 'geography';
-      this.publish(); EventBus.emit(E.QUESTION, { runId: this.state.runId, subject, grade: mode === 'grade' ? this.state.grade : undefined, difficulty: difficultyAt(this.state.distance).questionDifficulty, timed: mode === 'mixed' });
+      const subject = mode === 'world' ? 'geography' : ['history', 'geography'].includes(mode) ? mode : this.gateCount++ % 2 === 0 ? 'history' : 'geography';
+      this.publish(); EventBus.emit(E.QUESTION, { runId: this.state.runId, subject, grade: mode === 'grade' ? this.state.grade : undefined, scope: mode === 'world' ? 'world' : undefined, curriculum: mode === 'mixed' ? 'pre-2018' : undefined, timed: mode === 'mixed' });
       return;
     }
     const inLane = Math.abs(this.player.x - LANES[item.lane]) < (this.player.collisionBody.width + 145) / 2;
     if (item.kind === 'coin' && (inLane || this.state.powers.magnet > 0)) {
-      this.state.coins++; item.setActive(false).setVisible(false); audioManager.play('coin'); return;
+      this.state.coins += coinValue(this.state); item.setActive(false).setVisible(false); audioManager.play('coin'); return;
     }
     if (!inLane) return;
     if (POWER_NAMES[item.kind]) {
-      if (item.kind === 'heart') this.state.health = Math.min(3, this.state.health + 1);
-      else this.state.powers[item.kind] = item.kind === 'shield' ? 1 : 10;
-      item.setActive(false).setVisible(false); this.burst(0xffdf79); this.notify(POWER_NAMES[item.kind] + ' đã sẵn sàng'); audioManager.play('power'); return;
+      const message = collectToken(this.state, item.kind);
+      item.setActive(false).setVisible(false); this.burst(TOKENS[item.kind].harmful ? 0xde8172 : 0xffdf79); this.notify(message); audioManager.play(TOKENS[item.kind].harmful ? 'hurt' : 'power');
+      if (item.kind === 'challenge') {
+        this.challengeActive = true; this.state.gameStatus = 'question'; this.tweens.pauseAll(); audioManager.music(false);
+        this.publish(); EventBus.emit(E.QUESTION, { runId: this.state.runId, challenge: true, subject: this.state.mode === 'world' ? 'geography' : this.gateCount++ % 2 === 0 ? 'geography' : 'history', scope: this.state.mode === 'world' ? 'world' : 'challenge', excludedMapId: this.state.mode === 'journey' ? this.state.mapId : undefined, difficulty: 3, timed: true, landmarkName: 'Thử thách ngoài lề' });
+      }
+      return;
     }
     if (item.kind === 'coin' || canAvoid(item.kind, this.player.collisionBody) || this.invincible > 0) return;
     if (this.state.powers.shield) { this.state.powers.shield = 0; this.invincible = 1; this.notify('Khiên đã bảo vệ bạn!'); this.burst(0x83d5df); return; }
-    this.state.health--; this.invincible = 1.8; audioManager.play('hurt'); this.cameras.main.shake(180, 0.006); this.burst(0xe98054);
+    if (this.state.mode === 'explore' && this.state.examIndex < 10) {
+      item.setActive(false).setVisible(false); this.invincible = 1.8;
+      if (!this.openExploreQuestion()) this.notify('Vấp nhẹ! Tiếp tục chạy đến token câu hỏi');
+      return;
+    }
+    else this.state.health--;
+    this.invincible = 1.8; audioManager.play('hurt'); this.cameras.main.shake(180, 0.006); this.burst(0xe98054);
     if (this.state.health <= 0) this.finish();
   }
   answer(result) {
     if (this.state.gameStatus !== 'question' || result.runId !== this.state.runId) return;
     if (!result.skipped) {
-      if (this.state.mode === 'journey') this.state.answeredGates++;
+      if (this.state.mode === 'journey' && !this.challengeActive) this.state.answeredGates++;
       if (result.correct) {
         this.state.correctAnswers++; this.state[result.subject === 'history' ? 'historyCorrect' : 'geographyCorrect']++;
         this.state.combo++; this.state.bestCombo = Math.max(this.state.bestCombo, this.state.combo);
-        const points = Math.round(100 * comboMultiplier(this.state.combo) * (this.state.powers.book > 0 ? 2 : 1));
+        const points = this.challengeActive ? 200 : Math.round(100 * comboMultiplier(this.state.combo) * (this.state.powers.book > 0 ? 2 : 1));
         this.state.questionPoints += points; this.state.coins += 5; this.burst(0xffdc65); this.notify('Chính xác! +' + points + ' điểm'); audioManager.play('correct');
       } else {
         this.state.wrongAnswers++; this.state.combo = 0;
         if (result.review) this.state.wrongQuestions.push(result.review);
-        this.notify('Thêm một điều mới để ghi nhớ'); audioManager.play('wrong');
+        this.notify(this.challengeActive ? `Thử thách: trừ ${deductPoints(this.state, 50)} điểm` : 'Thêm một điều mới để ghi nhớ'); audioManager.play('wrong');
       }
     }
+    if (!result.skipped) {
+      resolveRunAnswer(this.state, result.correct);
+      this.notify(result.correct ? 'Chính xác! +1 mạng (tối đa 3) · +20 m' : 'Chưa đúng · −1 mạng · lùi 50 m');
+      if (this.state.health === 0) { this.tweens.resumeAll(); this.finish(false); return; }
+      if (this.state.mode === 'explore' && this.state.examIndex >= 10) { this.tweens.resumeAll(); this.finish(true); return; }
+    }
+    this.challengeActive = false;
     this.player.state = result.correct ? 'victory' : 'run'; this.state.gameStatus = 'playing'; this.invincible = Math.max(this.invincible, 1.2);
     this.tweens.resumeAll(); audioManager.music(true); this.publish();
   }
@@ -131,16 +182,23 @@ export default class GameScene extends Phaser.Scene {
     EventBus.emit(E.OVER, JSON.parse(JSON.stringify(this.state)));
   }
   publish() { this.state.score = scoreOf(this.state); EventBus.emit(E.HUD, { ...this.state, powers: { ...this.state.powers }, map: this.world.name }); }
+  openExploreQuestion() {
+    if (this.state.mode !== 'explore' || !questionReady(this.state)) return false;
+    const index = this.state.examIndex++;
+    this.obstacles.items.filter(item => item.kind === 'question').forEach(item => item.setActive(false).setVisible(false));
+    this.state.gameStatus = 'question'; this.tweens.pauseAll(); audioManager.music(false); this.publish();
+    EventBus.emit(E.QUESTION, { runId: this.state.runId, exam: true, index }); return true;
+  }
   update(time, delta) {
     if (this.state.gameStatus !== 'playing') return;
     const dt = Math.min(delta, 50) / 1000; this.state.duration += dt;
     const difficulty = journeyDifficulty(this.state); this.state.level = difficulty.level; this.state.speed = difficulty.speed;
-    this.state.distance += this.state.speed * dt / 10 * (this.state.powers.clock > 0 ? 0.65 : 1);
+    this.state.distance += effectiveSpeed(this.state) * dt / 10;
     this.invincible = Math.max(0, this.invincible - dt);
-    for (const key of ['magnet', 'clock', 'book']) this.state.powers[key] = Math.max(0, this.state.powers[key] - dt);
+    for (const key of TIMED_POWERS) this.state.powers[key] = Math.max(0, this.state.powers[key] - dt);
     this.player.tick(dt, this.state.duration, this.invincible); this.world.tick(this.state.distance);
     this.obstacles.tick(dt, this.state, item => this.collide(item));
-    if (this.state.mode === 'journey' && this.state.gameStatus === 'playing' && this.state.distance >= this.state.distanceTarget) {
+    if (['journey', 'world'].includes(this.state.mode) && this.state.gameStatus === 'playing' && this.state.distance >= this.state.distanceTarget) {
       this.state.distance = this.state.distanceTarget; this.finish(true); return;
     }
     this.noticeTime -= dt; if (this.noticeTime <= 0) this.notice.setVisible(false);

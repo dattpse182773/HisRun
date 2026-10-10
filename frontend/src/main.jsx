@@ -10,3 +10,9 @@ createRoot(document.getElementById('root')).render(<React.StrictMode><BrowserRou
 import './journey.css';
 
 import './responsive.css';
+import './scenario.css';
+import './administrative-map.css';
+import './lessons.css';
+import './poster.css';
+import './cartoon-theme.css';
+import './exams.css';

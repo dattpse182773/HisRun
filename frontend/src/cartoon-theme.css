@@ -1,0 +1,53 @@
+/* Storybook palette shared by the poster, navigation and learning screens. */
+:root{--ink:#57351e;--green:#176b72;--orange:#d76523;--muted:#766047;color:var(--ink);background:#fff0ce;font-family:'Trebuchet MS','Segoe UI',sans-serif}
+body{background:radial-gradient(ellipse at 8% 0,#fffbe6 0,transparent 36%),linear-gradient(180deg,#bde8e4 0,#eef6db 420px,#fff0ce 900px);background-attachment:fixed;color:var(--ink)}
+.app-shell{max-width:1536px;padding:0 40px}
+.header,.in-game .header{height:auto;min-height:122px;gap:22px;border-bottom:3px solid #b98643;padding:12px 0;position:relative}
+.brand,.in-game .brand{flex:0 0 auto;padding:0;border:2px solid #b48240;border-radius:18px;overflow:hidden;background:#e4f4da;box-shadow:0 4px 0 #80572e33}
+.brand-poster-logo{display:block;width:205px;height:107px;overflow:hidden}
+.header nav{gap:10px;margin-left:auto;align-items:center}
+.header nav a,.header nav .nav-profile{display:flex;align-items:center;justify-content:center;min-height:48px;padding:10px 16px!important;border:2px solid #a6773c;border-radius:13px;background:#fff5d9;color:#654023;font-size:16px;font-weight:800;box-shadow:0 4px 0 #be985e;transition:background .15s,transform .15s}
+.header nav a:hover{background:#ffe29a;transform:translateY(-2px)}
+.header nav a.active{background:#207b83;color:#fff9da;border-color:#354d3c;box-shadow:0 4px 0 #354d3c}
+.header nav:after{display:none}
+.header .sound-menu{position:static;margin:0;flex-shrink:0;width:48px;padding:0;background:#ffe39a;font-size:24px}
+:is(a,button,input,select):focus-visible{outline:3px solid #197e9b;outline-offset:5px}
+h1,h2,h3{color:#60381f;font-weight:900;text-wrap:balance}
+.hero h1,.page-intro h1,.profile-heading h1{color:#60381f;text-shadow:0 2px 0 #fff6dc;letter-spacing:-1.3px}
+.hero h1>span,.page-intro h1 span{color:#c35a20}
+.hero-description,.page-intro p,.muted,.feature-grid p,.scope-note,.hero-note{color:#735a40}
+.eyebrow{color:#976022;letter-spacing:1.5px}
+.game-poster{border:3px solid #9b692f;border-radius:22px;box-shadow:0 7px 0 #ba8845,0 16px 30px #6d4f2420;margin:28px 0 38px;background:#fff0c8}
+.game-poster-caption{background:linear-gradient(90deg,#fff0c8,#ffe29b);border-top:2px solid #b98643;color:#684220;font-weight:800}
+.game-poster-caption a{color:#146674}
+.primary-button{background:linear-gradient(#ffca62,#f1a23b);color:#55331d;border:2px solid #80451f;box-shadow:0 5px 0 #80451f;border-radius:14px;font-weight:900;transition:transform .15s,filter .15s}
+.primary-button:hover{background:linear-gradient(#ffda80,#ffb949);filter:brightness(1.03);transform:translateY(-2px)}
+.primary-button:active{transform:translateY(3px);box-shadow:0 2px 0 #80451f}
+.outline-button{background:#fff8df;color:#684326;border:2px solid #a4773e;box-shadow:0 3px 0 #c9a46b;border-radius:12px;font-weight:700}
+.secondary-link,.back-link{color:#176f79;font-weight:800}
+.feature-grid article,.map-card,.review-card,.profile-stats article,.leaderboard-table,.modal-card,.empty-state,.administrative-map,.mode-card{border:2px solid #b38449;background:#fff8e5;border-radius:20px;box-shadow:0 5px 0 #ddbc7c,0 10px 20px #7857230b}
+.feature-grid article{background:linear-gradient(145deg,#fffbea,#fff0c8)}
+.feature-icon{background:#ffe0a0;border:2px solid #be8b3f;border-radius:14px;color:#a65324}
+.feature-tag,.landmark-chips span{background:#e0f0de;color:#366544;border:1px solid #95b584;border-radius:9px;padding:5px 9px}
+.journey,.history-library{border-top:3px solid #d3ac68}
+.expedition-strip,.vietnam-journey,.heritage-section,.story-recap{background:#f5e5b8;border:2px solid #bc8d4b;border-radius:20px}
+.mode-card{overflow:hidden}.mode-card h3{color:#62371d}.mode-world{background:linear-gradient(135deg,#fef6d6,#d8eee0)}.mode-ranked{background:linear-gradient(135deg,#fff1cd,#ffdbac)}
+.mode-icon{color:#a95120}.page-intro{padding:25px 30px;border-left:6px solid #c18437;background:linear-gradient(90deg,#fff6db,transparent);border-radius:5px 24px 24px 5px}
+.school-options button,.tab-row button,.region-options button,.admin-era button,.map-region-filters button{border:2px solid #b79050;background:#fff6da;color:#664522;border-radius:12px;box-shadow:0 3px 0 #dac089}
+.school-options button.selected,.tab-row button.active,.region-options button[aria-pressed=true],.admin-era button[aria-pressed=true],.map-region-filters button[aria-pressed=true]{background:#247b80;border-color:#355d50;color:#fff8da;box-shadow:0 3px 0 #355d50}
+.school-options button.selected span{color:#e7f5df}
+.admin-map-frame{background:#d9efea;border-color:#bfa36a}.admin-detail{background:#fff4d5}.admin-merger{background:#ffebbb;border-color:#c3994b}
+.map-card-art{border-bottom:2px solid #b38449}.map-number{background:#ffda82;color:#623817;border:2px solid #895b2c}
+.map-play{color:#146c74}.passport{background:#fff0c7;border-color:#b88843}.table-heading{background:#f2d89b;color:#674322}
+.profile-avatar{background:#247b80;border:3px solid #ab7838;box-shadow:0 4px 0 #c4a363;color:#ffda7a}
+.modal-backdrop{background:#382c20b3}.modal-card{box-shadow:0 8px 0 #b58746,0 28px 80px #27160955}
+.answer-button{border-width:2px;border-color:#c6a263;background:#fffaea;border-radius:13px;color:#573d24}.answer-button>span{background:#f6e0aa;color:#69401d}
+.character-option{border:2px solid #bd9454;background:linear-gradient(#fff7df,#f4dca5)}.character-option.selected{background:#cdebe1;outline-color:#267e83}
+.runner-hud{background:linear-gradient(#27828a,#17636e);border:2px solid #674825;border-bottom:0}.runner-hud small{color:#e0f4db}.game-frame{border-color:#b98a48}.pause-button{background:#ffe1a0;color:#624021;border:2px solid #694524}
+.touch-controls button{border-color:#a77a3d;background:#ffefbd;color:#613d21}.active-powers>span{background:#ffe5a0;border-color:#b38236;color:#614021}
+footer{border-top:3px solid #caa269;color:#745836;margin-top:20px}
+@media(max-width:1100px){.header{gap:12px}.header nav{gap:7px}.header nav a{padding:10px!important;font-size:14px}.brand-poster-logo{width:175px;height:91px}}
+@media(max-width:760px){.app-shell{padding:0 18px}.header,.in-game .header{display:grid;grid-template-columns:1fr auto;gap:14px;padding:12px 0 18px;min-height:0}.brand{justify-self:start}.brand-poster-logo{width:158px;height:82px}.header nav{grid-column:1/-1;grid-row:2;display:flex;flex-wrap:wrap;width:100%;gap:8px;margin:0}.header nav a{flex:1 1 auto;min-height:44px;font-size:14px;padding:9px 12px!important}.header .sound-menu{grid-column:2;grid-row:1}.game-poster{margin-top:22px;border-radius:14px}.game-poster-caption{font-size:12px;gap:12px}.page-intro{padding:20px 18px}.hero h1{font-size:clamp(35px,8.5vw,52px)}.content-page{padding-top:28px}.in-game .brand-poster-logo{width:124px;height:65px}.in-game .header nav{gap:6px}.in-game .header nav a{font-size:13px;padding:8px!important}.modal-card{border-radius:18px}}
+@media(prefers-reduced-motion:reduce){.header nav a,.primary-button{transition:none}.header nav a:hover,.primary-button:hover{transform:none}}
+
+.life-frame{position:relative}.run-lives{position:absolute;top:12px;left:14px;z-index:3;background:#214d3fed;border:2px solid #f4c770;border-radius:16px;padding:8px 14px;color:#fff2cb;box-shadow:0 4px 0 #16372d;pointer-events:none}.run-lives>strong{display:block;font-size:clamp(12px,1.5vw,20px);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.drum-lives{display:flex;gap:5px}.drum-lives svg{width:clamp(27px,3.5vw,48px);height:clamp(27px,3.5vw,48px);filter:drop-shadow(0 2px 1px #0005)}.drum-lives .lost-life{filter:grayscale(1);opacity:.25}@media(max-width:600px){.run-lives{top:6px;left:6px;padding:4px 7px;border-radius:10px}.drum-lives{gap:2px}}

@@ -25,9 +25,16 @@ export async function getPlayer(id) {
   return { _id: player._id, username: player.username, stats: stats || { highScore: 0, totalDistance: 0, coins: 0, totalGames: 0, correctAnswers: 0, wrongAnswers: 0, historyCorrect: 0, geographyCorrect: 0, bestCombo: 0 }, recent };
 }
 export function validateResult(body) {
-  if (!body || !['endless', 'history', 'geography', 'mixed', 'grade', 'journey'].includes(body.mode)) throw new HttpError(400, 'Chế độ không hợp lệ.');
+  if (!body || !['endless', 'history', 'geography', 'mixed', 'grade', 'journey', 'world'].includes(body.mode)) throw new HttpError(400, 'Chế độ không hợp lệ.');
   if (typeof body.runId !== 'string' || !/^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(body.runId)) throw new HttpError(400, 'runId không hợp lệ.');
   const clean = { runId: body.runId, mode: body.mode };
+  const penalties = body.penalties ?? 0;
+  if (!Number.isInteger(penalties) || penalties < 0 || penalties > 1000000) throw new HttpError(400, 'Điểm bị trừ không hợp lệ.');
+  clean.penalties = penalties;
+  if (body.mode === 'world') {
+    if (typeof body.completed !== 'boolean' || (body.completed && body.distance !== 1000)) throw new HttpError(400, 'Trạng thái chuyến khám phá không hợp lệ.');
+    clean.completed = body.completed;
+  }
   if (body.mode === 'journey') {
     const map = JOURNEY_MAPS.find(row => row.id === body.mapId);
     if (!map || !SCHOOL_LEVELS.some(row => row.id === body.schoolLevel) || typeof body.completed !== 'boolean') throw new HttpError(400, 'Map, cấp học hoặc trạng thái hoàn thành không hợp lệ.');
@@ -40,7 +47,7 @@ export function validateResult(body) {
   }
   if (typeof body.duration !== 'number' || !Number.isFinite(body.duration) || body.duration < 0 || body.duration > 86400) throw new HttpError(400, 'Thời lượng không hợp lệ.');
   clean.duration = body.duration;
-  if (clean.historyCorrect + clean.geographyCorrect !== clean.correctAnswers || clean.bestCombo > clean.correctAnswers || clean.distance > clean.duration * 46 + 10 || clean.score < clean.distance + clean.coins * 10 || clean.score > clean.distance + clean.coins * 10 + clean.correctAnswers * 600) throw new HttpError(400, 'Kết quả có các chỉ số không nhất quán.');
+  if (clean.historyCorrect + clean.geographyCorrect !== clean.correctAnswers || clean.bestCombo > clean.correctAnswers || clean.distance > clean.duration * 46 + 10 || clean.score < Math.max(0, clean.distance + clean.coins * 10 - penalties) || clean.score > Math.max(0, clean.distance + clean.coins * 10 + clean.correctAnswers * 600 - penalties)) throw new HttpError(400, 'Kết quả có các chỉ số không nhất quán.');
   return clean;
 }
 export async function saveResult(body, authorization) {
@@ -55,8 +62,9 @@ export async function saveResult(body, authorization) {
   } catch (error) { if (error.code !== 11000) throw error; }
   return getPlayer(String(player._id));
 }
-export async function leaderboard(metric) {
+export async function leaderboard(metric, mode) {
+  if (mode !== undefined && mode !== 'mixed') throw new HttpError(400, 'Bảng xếp hạng không hợp lệ.');
   const field = { score: 'highScore', distance: 'totalDistance', knowledge: 'correctAnswers' }[metric];
   if (!field) throw new HttpError(400, 'Loại bảng xếp hạng không hợp lệ.');
-  return GameResult.aggregate([{ $group: { _id: '$playerId', ...totals } }, { $sort: { [field]: -1, _id: 1 } }, { $limit: 50 }, { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'player' } }, { $project: { ...Object.fromEntries(Object.keys(totals).map(key => [key, 1])), username: { $arrayElemAt: ['$player.username', 0] } } }]);
+  return GameResult.aggregate([...(mode ? [{ $match: { mode } }] : []), { $group: { _id: '$playerId', ...totals } }, { $sort: { [field]: -1, _id: 1 } }, { $limit: 50 }, { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'player' } }, { $project: { ...Object.fromEntries(Object.keys(totals).map(key => [key, 1])), username: { $arrayElemAt: ['$player.username', 0] } } }]);
 }

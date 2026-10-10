@@ -6,6 +6,7 @@ import { env } from './config/env.js';
 import { isDatabaseConnected } from './config/database.js';
 import questionRoutes from './routes/questionRoutes.js';
 import playerRoutes from './routes/playerRoutes.js';
+import examRoutes from './routes/examRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 export const app = express();
@@ -21,6 +22,7 @@ app.get('/api/health', (req, res) => {
   res.status(connected ? 200 : 503).json({ status: connected ? 'ok' : 'degraded', database: connected ? 'connected' : 'disconnected', service: 'HisRun API' });
 });
 app.use('/api/questions', questionRoutes);
+app.use('/api/exams', examRoutes);
 app.use('/api', playerRoutes);
 app.use(notFound);
 app.use(errorHandler);

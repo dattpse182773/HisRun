@@ -15,12 +15,17 @@ async function request(path, { signal, ...options } = {}) {
 }
 const queryString = filters => new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0)).map(([key, value]) => [key, Array.isArray(value) ? value.join(',') : value])).toString();
 export const api = {
+  examCatalog: signal => request('/exams/catalog', { signal }),
+  startExam: data => request('/exams', { method: 'POST', body: JSON.stringify(data) }),
+  answerExam: (token, index, answer) => request(`/exams/${encodeURIComponent(token)}/answer`, { method: 'POST', body: JSON.stringify({ index, answer }) }),
+  submitExam: (token, data) => request(`/exams/${encodeURIComponent(token)}/submit`, { method: 'POST', body: JSON.stringify(data) }),
+  examRanking: signal => request('/exams/ranking', { signal }),
   health: signal => request('/health', { signal }),
   questions: (filters = {}, signal) => request(`/questions?${queryString(filters)}`, { signal }),
   randomQuestion: (filters = {}, signal) => request(`/questions/random?${queryString(filters)}`, { signal }),
   answer: (id, answer, signal) => request(`/questions/${encodeURIComponent(id)}/answer`, { method: 'POST', body: JSON.stringify({ answer }), signal }),
   createPlayer: username => request('/users', { method: 'POST', body: JSON.stringify({ username }) }),
   player: (id, signal) => request(`/users/${encodeURIComponent(id)}`, { signal }),
-  leaderboard: (metric = 'score', signal) => request(`/leaderboard/${encodeURIComponent(metric)}`, { signal }),
+  leaderboard: (metric = 'score', signal, mode) => request(`/leaderboard/${encodeURIComponent(metric)}?${queryString({mode})}`, { signal }),
   saveResult: (result, player) => request('/game-results', { method: 'POST', headers: { Authorization: `Bearer ${player.token}` }, body: JSON.stringify({ ...result, playerId: player._id, distance: Math.floor(result.distance), score: Math.floor(result.score) }) }),
 };

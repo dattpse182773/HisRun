@@ -1,4 +1,11 @@
+import { useState } from 'react';
+import { backgroundUrl } from '../game/scenery.js';
 export default function MapArt({ map }) {
+  const [failed, setFailed] = useState(null);
+  if (failed !== map.theme) return <img className="map-art illustrated-map-art" src={backgroundUrl(map.theme)} alt={`Phong cảnh minh họa ${map.name}`} loading="lazy" onError={() => setFailed(map.theme)}/>;
+  return <FallbackMapArt map={map}/>;
+}
+function FallbackMapArt({ map }) {
   const city = ['saigon', 'citadel', 'imperial'].includes(map.theme);
   return <svg className="map-art" viewBox="0 0 420 180" role="img" aria-label={`Minh họa ${map.name}: ${map.landmarks.map(place => place.name).join(', ')}`}>
     <rect width="420" height="180" fill={map.color} opacity=".17"/><circle cx="343" cy="41" r="24" fill="#f5d789"/>

@@ -7,6 +7,7 @@ import request from 'supertest';
 import { app } from '../src/app.js';
 import Question from '../src/models/Question.js';
 import { JOURNEY_MAPS, SCHOOL_LEVELS, checkpointsFor, nextMap } from '../../shared/journey.js';
+import { WORLD_TOPICS } from '../../shared/playModes.js';
 let mongo, rows;
 before(async () => { mongo = await MongoMemoryServer.create(); await mongoose.connect(mongo.getUri()); rows = JSON.parse(await readFile(new URL('../src/data/questions/journey.json', import.meta.url))); for(let i=0;i<2;i++) await Question.bulkWrite(rows.map(row => ({updateOne:{filter:{contentKey:row.contentKey},update:{$set:row},upsert:true}}))); });
 after(async () => { await mongoose.disconnect(); await mongo?.stop(); });
@@ -31,4 +32,13 @@ test('invalid maps and cross-map landmarks rejected',async()=>{
 test('north to south route has reachable gates and ends after map 8',()=>{
  JOURNEY_MAPS.forEach((map,index)=>{ assert.equal(map.number,index+1);if(index)assert.ok(map.latitude<JOURNEY_MAPS[index-1].latitude); for(const gate of checkpointsFor(map.id))assert.ok(gate.distance<map.distance); });
  assert.equal(checkpointsFor('map-08').length,4);assert.equal(nextMap('map-08'),null);assert.equal(nextMap('map-01').id,'map-02');
+});
+test('world scope samples only world questions and never exposes the answer', async () => {
+ const samples = JSON.parse(await readFile(new URL('../src/data/questions/geography.json', import.meta.url)));
+ await Question.insertMany(samples);
+ const { body } = await request(app).get('/api/questions?scope=world&limit=100').expect(200);
+ assert.ok(body.total >= 10);
+ body.questions.forEach(row => { assert.ok(WORLD_TOPICS.includes(row.topic)); assert.equal(row.subject, 'geography'); assert.equal(row.correctAnswer, undefined); });
+ await request(app).get('/api/questions/random?scope=world&subject=history').expect(400);
+ await request(app).get('/api/questions/random?scope=bad').expect(400);
 });

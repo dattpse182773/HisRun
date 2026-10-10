@@ -13,9 +13,9 @@ export function difficultyAt(distance) {
 }
 export function comboMultiplier(combo) { return combo >= 10 ? 3 : combo >= 5 ? 2 : combo >= 3 ? 1.5 : combo >= 2 ? 1.2 : 1; }
 export function newRun(mode = 'endless', grade = 6) {
-  return { runId: crypto.randomUUID(), mode, grade, score: 0, distance: 0, coins: 0, health: 3, level: 1, speed: 300, combo: 0, bestCombo: 0, correctAnswers: 0, wrongAnswers: 0, historyCorrect: 0, geographyCorrect: 0, questionPoints: 0, duration: 0, gameStatus: 'playing', powers: { shield: 0, magnet: 0, clock: 0, book: 0 }, wrongQuestions: [] };
+  return { runId: crypto.randomUUID(), mode, grade, score: 0, distance: 0, coins: 0, health: 3, level: 1, speed: 300, combo: 0, bestCombo: 0, correctAnswers: 0, wrongAnswers: 0, historyCorrect: 0, geographyCorrect: 0, questionPoints: 0, penalties: 0, tokensCollected: 0, duration: 0, gameStatus: 'playing', powers: { shield: 0, magnet: 0, clock: 0, boost: 0, doubleCoin: 0, book: 0 }, wrongQuestions: [] };
 }
-export function scoreOf(state) { return Math.floor(state.distance) + state.coins * 10 + state.questionPoints; }
+export function scoreOf(state) { return Math.max(0, Math.floor(state.distance) + state.coins * 10 + state.questionPoints - (state.penalties || 0)); }
 export function blockedLanes(level, random = Math.random) {
   const safe = Math.floor(random() * 3);
   const candidates = [0, 1, 2].filter(lane => lane !== safe);

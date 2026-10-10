@@ -4,7 +4,7 @@ export function readStorage(key, fallback) {
 export function writeStorage(key, value) {
   try { localStorage.setItem(`hisrun:${key}`, JSON.stringify(value)); return true; } catch { return false; }
 }
-export const defaultSettings = { sound: true, music: false, volume: 0.4 };
+export const defaultSettings = { sound: true, music: true, volume: 0.4 };
 export function rememberRun(result) {
   if (result.completed && result.mapId) {
     const progress = readStorage('journeyProgress', {});

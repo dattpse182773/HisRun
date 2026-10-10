@@ -51,3 +51,11 @@ test('inconsistent results, forged score and invalid ObjectIds are rejected', as
   }
   await request(app).get('/api/users/nope').expect(400); await request(app).get('/api/leaderboard/nope').expect(400);
 });
+test('ranked leaderboard excludes discovery runs and world completion is validated', async () => {
+  const run = { ...validRun(), mode: 'world', completed: true };
+  await request(app).post('/api/game-results').set('Authorization', `Bearer ${player.token}`).send(run).expect(200);
+  const { body } = await request(app).get('/api/leaderboard/score?mode=mixed').expect(200);
+  assert.equal(body[0].totalGames, 2);
+  await request(app).get('/api/leaderboard/score?mode=invalid').expect(400);
+  await request(app).post('/api/game-results').set('Authorization', `Bearer ${player.token}`).send({ ...run, runId: randomUUID(), distance: 900 }).expect(400);
+});

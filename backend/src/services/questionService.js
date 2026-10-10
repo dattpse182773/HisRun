@@ -1,3 +1,4 @@
+import { WORLD_TOPICS } from '../../../shared/playModes.js';
 import mongoose from 'mongoose';
 import Question from '../models/Question.js';
 import { HttpError } from '../middleware/errorHandler.js';
@@ -16,6 +17,17 @@ export function validateId(id) {
 }
 export function buildFilters(query) {
   const filters = { active: true };
+  if (query.scope !== undefined) {
+    if (!['world', 'challenge'].includes(query.scope)) throw new HttpError(400, 'Phạm vi không hợp lệ.');
+    if (query.scope === 'world') {
+      if (query.subject && query.subject !== 'geography') throw new HttpError(400, 'Khám phá thế giới hiện dùng ngân hàng Địa lý.');
+      filters.topic = { $in: WORLD_TOPICS }; filters.subject = 'geography';
+    } else filters.difficulty = { $gte: 3 };
+  }
+  if (query.excludedMapId !== undefined) {
+    if (query.scope !== 'challenge' || query.mapId !== undefined || !JOURNEY_MAPS.some(map => map.id === query.excludedMapId)) throw new HttpError(400, 'Map loại trừ không hợp lệ.');
+    filters.mapId = { $ne: query.excludedMapId };
+  }
   if (query.mapId !== undefined) {
     if (!JOURNEY_MAPS.some(map => map.id === query.mapId)) throw new HttpError(400, 'Map không hợp lệ.');
     filters.mapId = query.mapId;
@@ -39,6 +51,7 @@ export function buildFilters(query) {
   }
   for (const [key, min, max] of [['grade', 4, 12], ['difficulty', 1, 5]]) {
     const value = parseInteger(query[key], key, min, max);
+    if (query.scope === 'challenge' && key === 'difficulty' && value !== undefined && value < 3) throw new HttpError(400, 'Câu thử thách cần độ khó từ 3 trở lên.');
     if (value !== undefined) filters[key] = value;
   }
   if (query.exclude !== undefined) {
